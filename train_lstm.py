@@ -7,6 +7,10 @@ import time
 from sklearn.preprocessing import MinMaxScaler
 
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
+
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
@@ -93,7 +97,7 @@ def train(train_data, model, loss_function, lr):
             model.zero_grad()
 
             data = torch.tensor(data, requires_grad=False).float()
-            data = data.unsqueeze(dim=2)
+            data = data.unsqueeze(dim=2).to(device)
 
             predicted_prices = model(data)
 
@@ -101,7 +105,7 @@ def train(train_data, model, loss_function, lr):
             loss.backward()
             optimizer.step()
 
-            losses.update(loss.item())
+            losses.update(loss.cpu().item())
 
             batch_time.update(time.time() - end)
             end = time.time()
@@ -115,7 +119,7 @@ def train(train_data, model, loss_function, lr):
 if __name__ == '__main__':
     train_data, validation_data, test_data = prepare_data()
 
-    model = LSTM_stock_predictor(64).float()
+    model = LSTM_stock_predictor(64).float().to(device)
     loss_function = nn.MSELoss()
 
     train(train_data, model, loss_function, lr=0.01)
