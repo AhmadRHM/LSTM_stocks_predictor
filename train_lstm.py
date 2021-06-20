@@ -9,6 +9,11 @@ from sklearn.preprocessing import MinMaxScaler
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
+whole_length = 2406
+train_length = 2000
+validation_length = 300
+seq_size = 60
+batch_size = 256
 
 
 class AverageMeter(object):
@@ -49,7 +54,7 @@ class LSTM_stock_predictor(nn.Module):
         return predicted_prices
 
 
-def get_sequenced(data, seq_size=60):
+def get_sequenced(data):
     N = data.shape[0]
     length = data.shape[1]
     data_seqed = []
@@ -59,7 +64,7 @@ def get_sequenced(data, seq_size=60):
     return np.array(data_seqed)
 
 
-def make_batch(data, batch_size=256):
+def make_batch(data):
     N = len(data)
     batched_data = []
     for i in range(0, N, batch_size):
@@ -72,24 +77,20 @@ def prepare_data():
     sc = MinMaxScaler(feature_range=(0, 1))
     prices_scaled = sc.fit_transform(prices)
 
-    whole_length = 2406
-    train_length = 2000
-    validation_length = 300
     train_data = prices_scaled[:, :train_length]
     validation_data = prices_scaled[:, train_length:train_length + validation_length]
     test_data = prices_scaled[:, train_length + validation_length:]
 
-    return make_batch(get_sequenced(train_data)), make_batch(get_sequenced(validation_data)), make_batch(
-        get_sequenced(test_data))
+    return make_batch(get_sequenced(train_data)), validation_data, test_data, prices_scaled[:, train_length-seq_size:train_length]
 
 
-def train(train_data, model, loss_function, lr):
+def train(train_data, val_data, feed_val_data, model, loss_function, lr):
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     batch_time = AverageMeter()
     losses = AverageMeter()
 
-    for epoch in range(1, 50):
+    for epoch in range(1, 20):
         model = model.train()
 
         end = time.time()
@@ -114,6 +115,18 @@ def train(train_data, model, loss_function, lr):
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t'.format(epoch, i, len(train_data), batch_time=batch_time,
                                                                       loss=losses))
+        predicted_val = torch.zeros_like(val_data)
+        feed_val_data = torch.tensor(feed_val_data, requires_grad=False).float()
+        feed_val_data = feed_val_data.unsqueeze(dim=2).to(device)
+        model = model.eval()
+        with torch.no_grad():
+            for i in range(validation_length):
+                predicted_prices = model(feed_val_data)
+                predicted_val[:, i] = predicted_prices[:, -1, 0]
+                feed_val_data[:, :-1, 0] = feed_val_data[:, 1:, 0]
+                feed_val_data[:, -1, 0] = predicted_prices[:, -1, 0]
+            print("Epoch: [{0}] - loss of validation {loss:.5f}".format(epoch, loss=loss_function(predicted_val, val_data)))
+        torch.save(model.state_dict(), "5LSTM-lr0.01.pth")
 
 
 def print_num_params(model):
