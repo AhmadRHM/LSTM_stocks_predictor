@@ -135,10 +135,10 @@ def print_num_params(model):
 
 
 if __name__ == '__main__':
-    train_data, validation_data, test_data = prepare_data()
+    train_data, validation_data, test_data, feed_val_data = prepare_data()
 
     model = LSTM_stock_predictor(64).float().to(device)
     print_num_params(model)
     loss_function = nn.MSELoss()
 
-    train(train_data, model, loss_function, lr=0.01)
+    train(train_data, validation_data, feed_val_data, model, loss_function, lr=0.01)
