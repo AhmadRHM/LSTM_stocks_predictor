@@ -127,7 +127,7 @@ def train(train_data, val_data, feed_val_data, model, loss_function, lr):
                 predicted_val[:, i] = predicted_prices[:, -1, 0]
                 feed_val_data[:, :-1, 0] = feed_val_data[:, 1:, 0]
                 feed_val_data[:, -1, 0] = predicted_prices[:, -1, 0]
-            print("Epoch: [{0}] - loss of validation {loss:.5f}".format(epoch, loss=loss_function(predicted_val, val_data)))
+            print("Epoch: [{0}] - loss of validation {loss:.5f}".format(epoch, loss=loss_function(predicted_val, val_data).cpu().item()))
         torch.save(model.state_dict(), "5LSTM-lr0.01.pth")
 
 
