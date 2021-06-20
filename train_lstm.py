@@ -116,7 +116,6 @@ def train(train_data, val_data, feed_val_data, model, loss_function, lr):
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t'.format(epoch, i, len(train_data), batch_time=batch_time,
                                                                       loss=losses))
         val_data = torch.tensor(val_data, requires_grad=False).float()
-        val_data = val_data.unsqueeze(dim=2).to(device)
         predicted_val = torch.zeros_like(val_data)
         feed_val_data = torch.tensor(feed_val_data, requires_grad=False).float()
         feed_val_data = feed_val_data.unsqueeze(dim=2).to(device)
