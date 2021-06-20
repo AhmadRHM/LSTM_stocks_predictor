@@ -116,10 +116,16 @@ def train(train_data, model, loss_function, lr):
                                                                       loss=losses))
 
 
+def print_num_params(model):
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(pytorch_total_params)
+
+
 if __name__ == '__main__':
     train_data, validation_data, test_data = prepare_data()
 
     model = LSTM_stock_predictor(64).float().to(device)
+    print_num_params(model)
     loss_function = nn.MSELoss()
 
     train(train_data, model, loss_function, lr=0.01)
