@@ -86,6 +86,9 @@ def prepare_data():
 
 def train(train_data, val_data, feed_val_data, model, loss_function, lr):
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    val_data = torch.tensor(val_data, requires_grad=False).float()
+    feed_val_data = torch.tensor(feed_val_data, requires_grad=False).float()
+    feed_val_data = feed_val_data.unsqueeze(dim=2).to(device)
 
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -115,10 +118,7 @@ def train(train_data, val_data, feed_val_data, model, loss_function, lr):
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t'.format(epoch, i, len(train_data), batch_time=batch_time,
                                                                       loss=losses))
-        val_data = torch.tensor(val_data, requires_grad=False).float()
         predicted_val = torch.zeros_like(val_data)
-        feed_val_data = torch.tensor(feed_val_data, requires_grad=False).float()
-        feed_val_data = feed_val_data.unsqueeze(dim=2).to(device)
         model = model.eval()
         with torch.no_grad():
             for i in range(validation_length):
